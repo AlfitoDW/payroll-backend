@@ -11,39 +11,49 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
+        $data = $request->validate([
+            'name'     => 'required|string',
+            'email'    => 'required|email|unique:users',
             'password' => 'required|min:6',
+            'role'     => 'required|in:admin,employee', 
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'admin'
+            'name'     => $data['name'],
+            'email'    => $data['email'],
+            'password' => Hash::make($data['password']),
+            'role'     => $data['role']
         ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Register berhasil',
-            'user' => $user
+            'user'    => $user,
+            'token'   => $token
         ], 201);
     }
 
     public function login(Request $request)
     {
+        $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required'
+        ]);
+
         if (!auth()->attempt($request->only('email', 'password'))) {
             return response()->json([
                 'message' => 'Email atau password salah'
             ], 401);
         }
 
-        $token = auth()->user()->createToken('auth_token')->plainTextToken;
+        $user = auth()->user();
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login berhasil',
-            'token' => $token,
-            'user' => auth()->user()
+            'token'   => $token,
+            'user'    => $user
         ]);
     }
 
