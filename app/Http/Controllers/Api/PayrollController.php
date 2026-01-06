@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 class PayrollController extends Controller
 {
     /**
-     * LIST PAYROLL + FILTER
+     * ADMIN - LIST PAYROLL + FILTER
      */
     public function index(Request $request)
     {
@@ -36,7 +36,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * CREATE PAYROLL
+     * ADMIN - CREATE PAYROLL
      */
     public function store(Request $request)
     {
@@ -77,7 +77,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * BAYAR GAJI
+     * ADMIN - PAY SALARY
      */
     public function pay($id)
     {
@@ -101,7 +101,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * SLIP GAJI
+     * ADMIN - SLIP DETAIL (JSON)
      */
     public function slip($id)
     {
@@ -110,30 +110,23 @@ class PayrollController extends Controller
         return response()->json([
             'status' => 'success',
             'slip' => [
-                'payroll_id'   => $payroll->id,
-                'month'        => $payroll->month,
-                'status'       => $payroll->status,
-                'paid_at'      => $payroll->paid_at,
-
-                'employee' => [
-                    'id'       => $payroll->employee->id,
-                    'name'     => $payroll->employee->name,
-                    'email'    => $payroll->employee->email,
-                    'position' => $payroll->employee->position,
-                ],
-
+                'payroll_id' => $payroll->id,
+                'month' => $payroll->month,
+                'status' => $payroll->status,
+                'paid_at' => $payroll->paid_at,
+                'employee' => $payroll->employee,
                 'salary' => [
-                    'basic'      => $payroll->basic_salary,
-                    'allowance'  => $payroll->allowance,
-                    'deduction'  => $payroll->deduction,
-                    'total'      => $payroll->total_salary,
+                    'basic' => $payroll->basic_salary,
+                    'allowance' => $payroll->allowance,
+                    'deduction' => $payroll->deduction,
+                    'total' => $payroll->total_salary,
                 ]
             ]
         ]);
     }
 
     /**
-     * SLIP GAJI PDF
+     * ADMIN - SLIP PDF
      */
     public function slipPdf($id)
     {
@@ -148,5 +141,57 @@ class PayrollController extends Controller
             $payroll->month .
             '.pdf'
         );
+    }
+
+    /**
+     * ADMIN - PAYROLL BY EMPLOYEE
+     */
+    public function byEmployee($id)
+    {
+        return response()->json([
+            'data' => Payroll::where('employee_id', $id)
+                ->with('employee')
+                ->latest()
+                ->get()
+        ]);
+    }
+
+    /**
+     * ADMIN - MONTHLY SUMMARY
+     */
+    public function summary($month)
+    {
+        return response()->json([
+            'month' => $month,
+            'total_employee' => Payroll::where('month', $month)->count(),
+            'total_paid' => Payroll::where('month', $month)->sum('total_salary'),
+            'paid' => Payroll::where('month', $month)->where('status', 'paid')->count(),
+            'pending' => Payroll::where('month', $month)->where('status', 'pending')->count(),
+        ]);
+    }
+
+    /**
+     * EMPLOYEE - MY PAYROLLS
+     */
+    public function myPayrolls(Request $request)
+    {
+        return response()->json([
+            'data' => Payroll::where('employee_id', $request->user()->id)
+                ->with('employee')
+                ->latest()
+                ->get()
+        ]);
+    }
+
+    /**
+     * EMPLOYEE - MY SLIP
+     */
+    public function mySlip(Request $request, $id)
+    {
+        $payroll = Payroll::where('id', $id)
+            ->where('employee_id', $request->user()->id)
+            ->firstOrFail();
+
+        return $this->slipPdf($payroll->id);
     }
 }
