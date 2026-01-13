@@ -8,18 +8,26 @@ use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
 {
+    /**
+     * GET /api/employees
+     */
     public function index()
     {
-        return Employee::all();
+        return response()->json([
+            'data' => Employee::all()
+        ]);
     }
 
+    /**
+     * POST /api/employees
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:employees',
-            'position' => 'required',
-            'salary' => 'required|numeric'
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:employees,email',
+            'position' => 'required|string|max:255',
+            'salary'   => 'required|numeric',
         ]);
 
         $data['user_id'] = $request->user()->id;
@@ -28,27 +36,45 @@ class EmployeeController extends Controller
 
         return response()->json([
             'message' => 'Employee berhasil ditambahkan',
-            'data' => $employee
+            'data'    => $employee
+        ], 201);
+    }
+
+    /**
+     * GET /api/employees/{id}
+     */
+    public function show($id)
+    {
+        return response()->json([
+            'data' => Employee::findOrFail($id)
         ]);
     }
 
-    public function show($id)
-    {
-        return Employee::findOrFail($id);
-    }
-
+    /**
+     * PUT /api/employees/{id}
+     */
     public function update(Request $request, $id)
     {
         $employee = Employee::findOrFail($id);
 
-        $employee->update($request->all());
+        $data = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:employees,email,' . $employee->id,
+            'position' => 'required|string|max:255',
+            'salary'   => 'required|numeric',
+        ]);
+
+        $employee->update($data);
 
         return response()->json([
             'message' => 'Employee berhasil diupdate',
-            'data' => $employee
+            'data'    => $employee
         ]);
     }
 
+    /**
+     * DELETE /api/employees/{id}
+     */
     public function destroy($id)
     {
         Employee::destroy($id);

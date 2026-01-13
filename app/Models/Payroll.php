@@ -14,7 +14,16 @@ class Payroll extends Model
         'deduction',
         'total_salary',
         'status',
-        'paid_at'
+        'paid_at',
+    ];
+
+    
+    protected $casts = [
+        'basic_salary' => 'float',
+        'allowance' => 'float',
+        'deduction' => 'float',
+        'total_salary' => 'float',
+        'paid_at' => 'datetime',
     ];
 
     public function employee()

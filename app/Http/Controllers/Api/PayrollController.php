@@ -21,9 +21,10 @@ class PayrollController extends Controller
             $query->where('employee_id', $request->employee_id);
         }
 
-        if ($request->filled('month')) {
-            $query->where('month', $request->month);
-        }
+        if ($request->filled('month') && $request->filled('year')) {
+        $period = sprintf('%04d-%02d', $request->year, $request->month);
+        $query->where('month', $period);
+    }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -39,42 +40,45 @@ class PayrollController extends Controller
      * ADMIN - CREATE PAYROLL
      */
     public function store(Request $request)
-    {
-        $data = $request->validate([
-            'employee_id'  => 'required|exists:employees,id',
-            'month'        => 'required',
-            'basic_salary' => 'required|numeric',
-            'allowance'    => 'nullable|numeric',
-            'deduction'    => 'nullable|numeric',
+{
+    $data = $request->validate([
+        'employee_id'  => 'required|exists:employees,id',
+        'month'        => 'required',
+        'basic_salary' => 'required|numeric',
+        'allowance'    => 'nullable|numeric',
+        'deduction'    => 'nullable|numeric',
+    ]);
+
+    $exists = Payroll::where('employee_id', $data['employee_id'])
+        ->where('month', $data['month'])
+        ->exists();
+
+    if ($exists) {
+        throw ValidationException::withMessages([
+            'month' => 'Payroll untuk bulan ini sudah ada'
         ]);
-
-        $exists = Payroll::where('employee_id', $data['employee_id'])
-            ->where('month', $data['month'])
-            ->exists();
-
-        if ($exists) {
-            throw ValidationException::withMessages([
-                'month' => 'Payroll untuk bulan ini sudah ada'
-            ]);
-        }
-
-        $data['allowance'] ??= 0;
-        $data['deduction'] ??= 0;
-
-        $data['total_salary'] =
-            $data['basic_salary']
-            + $data['allowance']
-            - $data['deduction'];
-
-        $data['status'] = 'pending';
-
-        $payroll = Payroll::create($data);
-
-        return response()->json([
-            'message' => 'Payroll berhasil dibuat',
-            'data' => $payroll
-        ], 201);
     }
+
+    $allowance = (float) ($data['allowance'] ?? 0);
+    $deduction = (float) ($data['deduction'] ?? 0);
+    $basic = (float) $data['basic_salary'];
+
+    $payroll = Payroll::create([
+        'employee_id' => $data['employee_id'],
+        'month' => $data['month'],
+        'basic_salary' => $basic,
+        'allowance' => $allowance,
+        'deduction' => $deduction,
+        'total_salary' => $basic + $allowance - $deduction,
+        'status' => 'pending',
+    ]);
+
+    return response()->json([
+        'message' => 'Payroll berhasil dibuat',
+        'data' => $payroll
+    ], 201);
+}
+
 
     /**
      * ADMIN - PAY SALARY
