@@ -16,6 +16,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'employee_id',
     ];
 
     protected $hidden = [
@@ -37,5 +38,10 @@ class User extends Authenticatable
     public function payrolls()
     {
         return $this->hasMany(\App\Models\Payroll::class, 'employee_id');
+    }
+
+     public function employee()
+    {
+        return $this->belongsTo(Employee::class);
     }
 }

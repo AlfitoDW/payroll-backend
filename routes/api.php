@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\PayrollController;
+use App\Http\Controllers\Api\Admin\EmployeeUserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +36,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     | EMPLOYEE MANAGEMENT
     */
     Route::apiResource('/employees', EmployeeController::class);
+    Route::get('/employee-users', [EmployeeUserController::class, 'index']);
+    Route::post('/employee-users', [EmployeeUserController::class, 'store']);
+    Route::post('/employee-users/{id}/reset', [EmployeeUserController::class, 'resetPassword']);
 
     /*
     | PAYROLL MANAGEMENT
