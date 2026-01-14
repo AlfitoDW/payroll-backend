@@ -187,6 +187,75 @@ class PayrollController extends Controller
         ]);
     }
 
+    public function update(Request $request, $id)
+{
+    $payroll = Payroll::findOrFail($id);
+
+    if ($payroll->status === 'paid') {
+        return response()->json([
+            'message' => 'Payroll yang sudah dibayar tidak bisa diubah'
+        ], 403);
+    }
+
+    $data = $request->validate([
+        'employee_id'  => 'required|exists:employees,id',
+        'month'        => 'required',
+        'basic_salary' => 'required|numeric',
+        'allowance'    => 'nullable|numeric',
+        'deduction'    => 'nullable|numeric',
+    ]);
+
+    $exists = Payroll::where('employee_id', $data['employee_id'])
+        ->where('month', $data['month'])
+        ->where('id', '!=', $payroll->id)
+        ->exists();
+
+    if ($exists) {
+        throw ValidationException::withMessages([
+            'month' => 'Payroll untuk bulan ini sudah ada'
+        ]);
+    }
+
+    $basic     = (float) $data['basic_salary'];
+    $allowance = (float) ($data['allowance'] ?? 0);
+    $deduction = (float) ($data['deduction'] ?? 0);
+
+    $payroll->update([
+        'employee_id' => $data['employee_id'],
+        'month' => $data['month'],
+        'basic_salary' => $basic,
+        'allowance' => $allowance,
+        'deduction' => $deduction,
+        'total_salary' => $basic + $allowance - $deduction,
+    ]);
+
+    return response()->json([
+        'message' => 'Payroll berhasil diperbarui',
+        'data' => $payroll
+    ]);
+}
+
+
+    public function destroy($id)
+    {
+        $payroll = Payroll::findOrFail($id);
+
+       
+        if ($payroll->status === 'paid') {
+            return response()->json([
+                'message' => 'Payroll yang sudah dibayar tidak bisa dihapus'
+            ], 403);
+        }
+
+        $payroll->delete();
+
+        return response()->json([
+            'message' => 'Payroll berhasil dihapus'
+        ]);
+    }
+
+
+    
     /**
      * EMPLOYEE - MY SLIP
      */

@@ -42,7 +42,8 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/payrolls', [PayrollController::class, 'index']);
     Route::post('/payrolls', [PayrollController::class, 'store']);
     Route::post('/payrolls/{id}/pay', [PayrollController::class, 'pay']);
-
+    Route::put('/payrolls/{id}', [PayrollController::class, 'update']);
+    Route::delete('/payrolls/{id}', [PayrollController::class, 'destroy']);
     /*
     | PAYROLL DETAIL & SLIP
     */
