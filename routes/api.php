@@ -84,4 +84,7 @@ Route::middleware(['auth:sanctum', 'role:employee'])->group(function () {
         '/my-payrolls/{id}/slip',
         [PayrollController::class, 'mySlip']
     );
+
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
+
 });

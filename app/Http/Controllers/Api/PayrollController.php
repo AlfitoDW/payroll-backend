@@ -177,15 +177,23 @@ class PayrollController extends Controller
     /**
      * EMPLOYEE - MY PAYROLLS
      */
-    public function myPayrolls(Request $request)
-    {
-        return response()->json([
-            'data' => Payroll::where('employee_id', $request->user()->id)
-                ->with('employee')
-                ->latest()
-                ->get()
-        ]);
-    }
+   public function myPayrolls(Request $request)
+        {
+            $user = $request->user();
+
+            if (!$user->employee_id) {
+                return response()->json([
+                    'message' => 'Akun employee belum terhubung'
+                ], 403);
+            }
+
+            return response()->json([
+                'data' => Payroll::where('employee_id', $user->employee_id)
+                    ->with('employee')
+                    ->latest()
+                    ->get()
+            ]);
+        }
 
     public function update(Request $request, $id)
 {
@@ -261,8 +269,14 @@ class PayrollController extends Controller
      */
     public function mySlip(Request $request, $id)
     {
+    $user = $request->user();
+
+        if (!$user->employee_id) {
+            abort(403, 'Akun employee belum terhubung');
+        }
+
         $payroll = Payroll::where('id', $id)
-            ->where('employee_id', $request->user()->id)
+            ->where('employee_id', $user->employee_id)
             ->firstOrFail();
 
         return $this->slipPdf($payroll->id);

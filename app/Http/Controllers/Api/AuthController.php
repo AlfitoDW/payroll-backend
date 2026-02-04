@@ -70,4 +70,28 @@ class AuthController extends Controller
             'message' => 'Logout berhasil'
         ]);
     }
+
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+
+    $data = $request->validate([
+        'current_password' => 'required',
+        'password' => 'required|min:6|confirmed',
+    ]);
+
+    if (!\Hash::check($data['current_password'], $user->password)) {
+        return response()->json([
+            'message' => 'Password lama salah'
+        ], 422);
+    }
+
+    $user->update([
+        'password' => bcrypt($data['password']),
+    ]);
+
+    return response()->json([
+        'message' => 'Password berhasil diubah'
+    ]);
+    }
 }
