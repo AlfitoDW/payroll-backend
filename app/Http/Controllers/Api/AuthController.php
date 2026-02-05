@@ -59,9 +59,15 @@ class AuthController extends Controller
     }
 
     public function me(Request $request)
-    {
-        return response()->json($request->user());
+{
+    $user = $request->user();
+
+    if ($user->avatar) {
+        $user->avatar = asset('storage/' . $user->avatar);
     }
+
+    return response()->json($user);
+}
 
     public function logout(Request $request)
     {
@@ -97,27 +103,29 @@ class AuthController extends Controller
     }
 
     public function uploadAvatar(Request $request)
-    {
-        $request->validate([
-            'avatar' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-        ]);
+{
+    $request->validate([
+        'avatar' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
 
-        $user = $request->user();
+    $user = $request->user();
 
-        // hapus avatar lama (optional)
-        if ($user->avatar) {
-            Storage::disk('public')->delete($user->avatar);
-        }
-
-        $path = $request->file('avatar')->store('avatars', 'public');
-
-        $user->update([
-            'avatar' => $path,
-        ]);
-
-        return response()->json([
-            'message' => 'Avatar berhasil diupdate',
-            'avatar' => $path,
-        ]);
+    if ($user->avatar) {
+        \Storage::disk('public')->delete($user->avatar);
     }
+
+    $path = $request->file('avatar')->store('avatars', 'public');
+
+    $user->update([
+        'avatar' => $path,
+    ]);
+
+    return response()->json([
+        'message' => 'Avatar berhasil diupdate',
+        'avatar' => asset('storage/' . $path), 
+    ]);
+}
+
+
+
 }
